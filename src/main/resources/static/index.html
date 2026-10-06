@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XYZ Hardware Shop - Inventory, Sales & Billing</title>
+    <title>XYZ Hardware Shop | Enterprise Inventory, Sales & Billing System</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -12,13 +12,21 @@
                 extend: {
                     colors: {
                         brand: {
-                            50: '#f0fdfa',
-                            100: '#ccfbf1',
-                            500: '#14b8a6',
-                            600: '#0d9488',
-                            700: '#0f766e',
-                            800: '#115e59',
-                            900: '#134e4a',
+                            50: '#fffbeb',
+                            100: '#fef3c7',
+                            200: '#fde68a',
+                            300: '#fcd34d',
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                            700: '#b45309',
+                            800: '#92400e',
+                            900: '#78350f',
+                        },
+                        dark: {
+                            800: '#1e293b',
+                            900: '#0f172a',
+                            950: '#020617',
                         }
                     }
                 }
@@ -27,424 +35,753 @@
     </script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Custom Commercial CSS -->
     <link rel="stylesheet" href="/css/style.css">
 </head>
-<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased">
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col antialiased selection:bg-amber-500 selection:text-white">
 
-    <!-- Top Notification Bar / Alert Banner for Low Stock -->
-    <div id="top-alert-banner" class="hidden bg-amber-500 text-white px-4 py-2 text-sm font-medium text-center shadow flex items-center justify-center space-x-2">
-        <i data-lucide="alert-triangle" class="w-4 h-4"></i>
-        <span id="top-alert-text">Attention: Products are running low on stock!</span>
-        <button onclick="app.switchView('admin-inventory')" class="underline ml-2 hover:text-amber-100 font-semibold">View Low Stock</button>
+    <!-- Global Alert Banner for Low Stock (Visible when products breach threshold) -->
+    <div id="top-alert-banner" class="hidden bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 text-white px-4 py-2.5 text-xs sm:text-sm font-semibold shadow-md flex items-center justify-between z-40">
+        <div class="max-w-7xl mx-auto w-full flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <i data-lucide="alert-triangle" class="w-4 h-4 shrink-0 animate-bounce"></i>
+                <span id="top-alert-text">Attention: Warehouse stock alert active!</span>
+            </div>
+            <button onclick="app.switchView('admin-lowstock')" class="px-2.5 py-1 bg-white/20 hover:bg-white/30 rounded text-xs font-bold underline transition">
+                View Low Stock Items &rarr;
+            </button>
+        </div>
     </div>
 
-    <!-- Navigation Header -->
-    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-            <div class="flex items-center space-x-3 cursor-pointer" onclick="app.switchView('catalog')">
-                <div class="w-10 h-10 rounded-lg bg-teal-600 text-white flex items-center justify-center shadow-md">
-                    <i data-lucide="wrench" class="w-6 h-6"></i>
+    <!-- MAIN APP LAYOUT CONTAINER -->
+    <div class="flex-1 flex overflow-hidden min-h-screen">
+
+        <!-- ==================== SIDEBAR ==================== -->
+        <aside id="app-sidebar" class="sidebar-expanded bg-dark-900 text-slate-300 flex flex-col shrink-0 border-r border-dark-800 z-30 transition-all duration-300">
+            <!-- Brand Header -->
+            <div class="h-16 flex items-center justify-between px-4 border-b border-dark-800">
+                <div class="flex items-center space-x-3 overflow-hidden cursor-pointer" onclick="app.switchView('admin-dashboard')">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-600 text-white flex items-center justify-center shadow-lg shrink-0">
+                        <i data-lucide="wrench" class="w-5 h-5"></i>
+                    </div>
+                    <div class="sidebar-text truncate">
+                        <span class="font-extrabold text-sm text-white tracking-wider uppercase block leading-tight">XYZ HARDWARE</span>
+                        <span class="text-[10px] text-amber-400 font-semibold uppercase tracking-widest">PRO COMMERCE</span>
+                    </div>
                 </div>
-                <div>
-                    <h1 class="font-bold text-lg text-slate-900 tracking-tight leading-none">XYZ HARDWARE</h1>
-                    <p class="text-xs text-slate-500 font-medium tracking-wide">TOOLS • PLUMBING • ELECTRICAL</p>
-                </div>
+                <!-- Collapse Button -->
+                <button onclick="app.toggleSidebar()" class="p-1.5 text-slate-400 hover:text-white hover:bg-dark-800 rounded-lg transition" title="Toggle Sidebar">
+                    <i data-lucide="chevrons-left" id="sidebar-toggle-icon" class="w-4 h-4"></i>
+                </button>
             </div>
 
-            <!-- Navigation Links -->
-            <nav class="hidden md:flex items-center space-x-1 font-medium text-sm text-slate-600">
-                <button onclick="app.switchView('catalog')" id="nav-catalog" class="px-3 py-2 rounded-md hover:bg-slate-100 hover:text-slate-900 transition flex items-center space-x-1.5 text-teal-700 font-semibold">
-                    <i data-lucide="shopping-bag" class="w-4 h-4"></i>
-                    <span>Product Catalog</span>
-                </button>
+            <!-- Navigation Menu -->
+            <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-6 text-xs font-medium">
+                <!-- Group 1: Overview -->
+                <div class="space-y-1">
+                    <div class="sidebar-section-title px-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Main Menu</div>
+                    <button onclick="app.switchView('admin-dashboard')" id="nav-item-admin-dashboard" class="sidebar-item w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:text-white transition">
+                        <i data-lucide="layout-dashboard" class="w-4 h-4 shrink-0 text-slate-400"></i>
+                        <span class="sidebar-text">Dashboard</span>
+                    </button>
+                    <button onclick="app.switchView('catalog')" id="nav-item-catalog" class="sidebar-item w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:text-white transition">
+                        <i data-lucide="shopping-bag" class="w-4 h-4 shrink-0 text-slate-400"></i>
+                        <span class="sidebar-text">Product Catalog</span>
+                    </button>
+                </div>
 
-                <!-- Admin Only Nav Items -->
-                <div id="admin-nav-group" class="hidden flex items-center space-x-1">
-                    <button onclick="app.switchView('admin-dashboard')" id="nav-admin-dashboard" class="px-3 py-2 rounded-md hover:bg-slate-100 hover:text-slate-900 transition flex items-center space-x-1.5">
-                        <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
-                        <span>Dashboard</span>
+                <!-- Group 2: Inventory & Stock -->
+                <div class="space-y-1">
+                    <div class="sidebar-section-title px-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Inventory</div>
+                    <button onclick="app.switchView('admin-products')" id="nav-item-admin-products" class="sidebar-item w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:text-white transition">
+                        <i data-lucide="package" class="w-4 h-4 shrink-0 text-slate-400"></i>
+                        <span class="sidebar-text">All Products</span>
                     </button>
-                    <button onclick="app.switchView('admin-inventory')" id="nav-admin-inventory" class="px-3 py-2 rounded-md hover:bg-slate-100 hover:text-slate-900 transition flex items-center space-x-1.5">
-                        <i data-lucide="package" class="w-4 h-4"></i>
-                        <span>Inventory</span>
+                    <button onclick="app.openAddProductModal()" class="sidebar-item w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:text-white transition">
+                        <i data-lucide="plus-circle" class="w-4 h-4 shrink-0 text-amber-400"></i>
+                        <span class="sidebar-text">Add Product</span>
                     </button>
-                    <button onclick="app.switchView('admin-sales')" id="nav-admin-sales" class="px-3 py-2 rounded-md hover:bg-slate-100 hover:text-slate-900 transition flex items-center space-x-1.5">
-                        <i data-lucide="receipt" class="w-4 h-4"></i>
-                        <span>Sales & Billing</span>
-                        <span id="pending-sales-count-badge" class="hidden ml-1 px-1.5 py-0.5 text-xs bg-amber-500 text-white font-bold rounded-full">0</span>
+                    <button onclick="app.switchView('admin-lowstock')" id="nav-item-admin-lowstock" class="sidebar-item w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:text-white transition">
+                        <div class="flex items-center space-x-3">
+                            <i data-lucide="alert-triangle" class="w-4 h-4 shrink-0 text-amber-500"></i>
+                            <span class="sidebar-text">Low Stock Alerts</span>
+                        </div>
+                        <span id="sidebar-lowstock-badge" class="sidebar-badge hidden px-1.5 py-0.5 text-[10px] font-bold bg-amber-500 text-white rounded-full">0</span>
                     </button>
-                    <button onclick="app.switchView('admin-customers')" id="nav-admin-customers" class="px-3 py-2 rounded-md hover:bg-slate-100 hover:text-slate-900 transition flex items-center space-x-1.5">
-                        <i data-lucide="users" class="w-4 h-4"></i>
-                        <span>Customers</span>
+                </div>
+
+                <!-- Group 3: Sales & Billing -->
+                <div class="space-y-1">
+                    <div class="sidebar-section-title px-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Commerce</div>
+                    <button onclick="app.switchView('admin-create-sale')" id="nav-item-admin-create-sale" class="sidebar-item w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:text-white transition">
+                        <i data-lucide="shopping-cart" class="w-4 h-4 shrink-0 text-emerald-400"></i>
+                        <span class="sidebar-text font-bold text-emerald-300">Create Sale</span>
                     </button>
-                    <button onclick="app.switchView('admin-notifications')" id="nav-admin-notifications" class="px-3 py-2 rounded-md hover:bg-slate-100 hover:text-slate-900 transition flex items-center space-x-1.5">
-                        <i data-lucide="bell" class="w-4 h-4"></i>
-                        <span>Notifications</span>
+                    <button onclick="app.switchView('admin-pending-sales')" id="nav-item-admin-pending-sales" class="sidebar-item w-full flex items-center justify-between px-3 py-2.5 rounded-xl hover:text-white transition">
+                        <div class="flex items-center space-x-3">
+                            <i data-lucide="clock" class="w-4 h-4 shrink-0 text-orange-400"></i>
+                            <span class="sidebar-text">Pending Sales</span>
+                        </div>
+                        <span id="sidebar-pending-sales-badge" class="sidebar-badge hidden px-1.5 py-0.5 text-[10px] font-bold bg-orange-500 text-white rounded-full">0</span>
+                    </button>
+                    <button onclick="app.switchView('admin-all-sales')" id="nav-item-admin-all-sales" class="sidebar-item w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:text-white transition">
+                        <i data-lucide="receipt" class="w-4 h-4 shrink-0 text-slate-400"></i>
+                        <span class="sidebar-text">Sales History</span>
+                    </button>
+                    <button onclick="app.switchView('admin-customers')" id="nav-item-admin-customers" class="sidebar-item w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:text-white transition">
+                        <i data-lucide="users" class="w-4 h-4 shrink-0 text-slate-400"></i>
+                        <span class="sidebar-text">Customers</span>
+                    </button>
+                </div>
+
+                <!-- Group 4: Communications & Settings -->
+                <div class="space-y-1">
+                    <div class="sidebar-section-title px-3 text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Administration</div>
+                    <button onclick="app.switchView('admin-notifications')" id="nav-item-admin-notifications" class="sidebar-item w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:text-white transition">
+                        <i data-lucide="bell" class="w-4 h-4 shrink-0 text-slate-400"></i>
+                        <span class="sidebar-text">Notification Logs</span>
+                    </button>
+                    <button onclick="app.switchView('admin-settings')" id="nav-item-admin-settings" class="sidebar-item w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl hover:text-white transition">
+                        <i data-lucide="settings" class="w-4 h-4 shrink-0 text-slate-400"></i>
+                        <span class="sidebar-text">Alert Settings</span>
                     </button>
                 </div>
             </nav>
 
-            <!-- User Status / Auth Buttons -->
-            <div class="flex items-center space-x-3">
-                <a href="/swagger-ui.html" target="_blank" class="hidden lg:flex items-center text-xs font-medium text-slate-500 hover:text-teal-600 bg-slate-100 px-2.5 py-1.5 rounded border border-slate-200">
-                    <i data-lucide="code" class="w-3.5 h-3.5 mr-1"></i> Swagger API
-                </a>
-
-                <div id="user-info-area" class="hidden flex items-center space-x-2">
-                    <div class="text-right hidden sm:block">
-                        <div id="user-display-name" class="text-xs font-semibold text-slate-800">Admin</div>
-                        <div id="user-role-badge" class="text-[10px] font-bold uppercase tracking-wider text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded">ADMIN</div>
+            <!-- Bottom User Profile Card in Sidebar -->
+            <div class="p-3 border-t border-dark-800">
+                <div class="flex items-center space-x-3 p-2 rounded-xl bg-dark-800/60">
+                    <div class="w-8 h-8 rounded-lg bg-amber-500 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                        <span id="sidebar-user-initial">A</span>
                     </div>
-                    <button onclick="app.logout()" class="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Log Out">
-                        <i data-lucide="log-out" class="w-5 h-5"></i>
-                    </button>
-                </div>
-
-                <div id="guest-auth-buttons">
-                    <button onclick="app.openLoginModal()" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-semibold shadow-sm transition flex items-center space-x-1.5">
-                        <i data-lucide="user" class="w-4 h-4"></i>
-                        <span>Sign In</span>
+                    <div class="sidebar-text truncate flex-1">
+                        <div id="sidebar-user-name" class="font-bold text-xs text-white truncate">Administrator</div>
+                        <div id="sidebar-user-role" class="text-[10px] text-amber-400 font-medium">Store Admin</div>
+                    </div>
+                    <button onclick="app.logout()" class="sidebar-text p-1 text-slate-400 hover:text-red-400 transition" title="Log Out">
+                        <i data-lucide="log-out" class="w-4 h-4"></i>
                     </button>
                 </div>
             </div>
-        </div>
-    </header>
+        </aside>
 
-    <!-- Global Toast Container -->
-    <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+        <!-- ==================== MAIN CONTENT WRAPPER ==================== -->
+        <div class="flex-1 flex flex-col overflow-y-auto min-w-0 bg-slate-50">
 
-    <!-- MAIN VIEW CONTAINER -->
-    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
-
-        <!-- ==================== VIEW 1: PUBLIC PRODUCT CATALOG ==================== -->
-        <section id="view-catalog" class="space-y-6">
-            <!-- Catalog Hero -->
-            <div class="bg-gradient-to-r from-teal-800 via-teal-700 to-slate-800 rounded-2xl p-6 sm:p-8 text-white shadow-lg relative overflow-hidden">
-                <div class="relative z-10 max-w-2xl">
-                    <span class="inline-block px-3 py-1 bg-teal-500/20 text-teal-200 text-xs font-semibold rounded-full uppercase tracking-wider mb-2">Retail & Wholesale Supply</span>
-                    <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">Premium Hardware Tools, Fasteners & Supplies</h2>
-                    <p class="mt-2 text-sm sm:text-base text-teal-100">Browse real-time stock levels, genuine factory prices, and instant availability for all your construction and plumbing needs.</p>
+            <!-- ==================== TOP NAVBAR ==================== -->
+            <header class="h-16 bg-white border-b border-slate-200 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20 shadow-xs">
+                <!-- Left: Mobile Toggle & Page Breadcrumb -->
+                <div class="flex items-center space-x-3">
+                    <button onclick="app.toggleMobileSidebar()" class="p-2 text-slate-500 hover:text-slate-800 md:hidden rounded-lg hover:bg-slate-100">
+                        <i data-lucide="menu" class="w-5 h-5"></i>
+                    </button>
+                    <div class="flex items-center space-x-2 text-xs text-slate-400">
+                        <span class="font-semibold text-slate-700 hidden sm:inline">XYZ Hardware Store</span>
+                        <span class="hidden sm:inline">/</span>
+                        <span id="top-current-view-title" class="text-amber-600 font-bold capitalize">Dashboard</span>
+                    </div>
                 </div>
-                <div class="absolute -right-8 -bottom-8 opacity-10 text-white pointer-events-none">
-                    <i data-lucide="tool" class="w-64 h-64"></i>
-                </div>
-            </div>
 
-            <!-- Catalog Filters & Search -->
-            <div class="bg-white rounded-xl p-4 shadow-sm border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4">
-                <div class="relative w-full md:w-96">
-                    <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                    <input type="text" id="catalog-search-input" onkeyup="app.handleCatalogSearch(event)" placeholder="Search products (e.g. PVC, Hammer, Wire)..." class="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                <!-- Center: Global Quick Search Input -->
+                <div class="hidden lg:flex items-center max-w-md w-full mx-4">
+                    <div class="relative w-full">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="global-search-input" onkeyup="app.handleGlobalSearch(event)" placeholder="Search products, orders, customers..." class="w-full pl-10 pr-12 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 focus:bg-white transition">
+                        <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-mono text-slate-400 bg-slate-200/60 px-1.5 py-0.5 rounded">Ctrl K</span>
+                    </div>
                 </div>
-                <div class="flex items-center space-x-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0" id="catalog-category-pills">
-                    <button onclick="app.filterCatalogCategory('')" class="category-pill px-3 py-1.5 rounded-lg text-xs font-medium bg-teal-600 text-white whitespace-nowrap">All Items</button>
+
+                <!-- Right Action Icons & Profile -->
+                <div class="flex items-center space-x-3">
+                    <!-- Swagger Documentation Quick Link -->
+                    <a href="/swagger-ui.html" target="_blank" class="hidden sm:flex items-center space-x-1.5 text-xs font-semibold text-slate-600 hover:text-amber-600 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 transition">
+                        <i data-lucide="code" class="w-3.5 h-3.5"></i>
+                        <span>Swagger API</span>
+                    </a>
+
+                    <!-- Notification Bell with Slide-out Panel trigger -->
+                    <button onclick="app.toggleNotificationPanel()" class="relative p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition" title="Notifications">
+                        <i data-lucide="bell" class="w-5 h-5"></i>
+                        <span id="top-bell-badge" class="hidden absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-amber-500 border-2 border-white rounded-full"></span>
+                    </button>
+
+                    <!-- Authentication & Profile Area -->
+                    <div id="top-user-profile-area" class="flex items-center space-x-2 pl-2 border-l border-slate-200">
+                        <button onclick="app.openLoginModal()" id="btn-top-signin" class="px-3.5 py-1.5 bg-dark-900 hover:bg-dark-800 text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center space-x-1.5">
+                            <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+                            <span>Sign In</span>
+                        </button>
+
+                        <div id="top-authenticated-info" class="hidden flex items-center space-x-2">
+                            <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-500 to-orange-600 text-white font-bold text-xs flex items-center justify-center shadow-xs">
+                                <span id="top-user-avatar">A</span>
+                            </div>
+                            <button onclick="app.logout()" class="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition" title="Log Out">
+                                <i data-lucide="log-out" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- ==================== NOTIFICATIONS SLIDE-OVER PANEL ==================== -->
+            <div id="notification-slide-panel" class="fixed inset-y-0 right-0 max-w-sm w-full bg-white shadow-2xl border-l border-slate-200 z-50 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col">
+                <div class="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+                    <div class="flex items-center space-x-2">
+                        <i data-lucide="bell" class="w-4 h-4 text-amber-500"></i>
+                        <h3 class="font-bold text-sm text-slate-900">Recent Shop Notifications</h3>
+                    </div>
+                    <button onclick="app.toggleNotificationPanel()" class="text-slate-400 hover:text-slate-600 p-1"><i data-lucide="x" class="w-4 h-4"></i></button>
+                </div>
+                <div id="slide-notification-items" class="flex-1 overflow-y-auto divide-y divide-slate-100 p-2 text-xs">
                     <!-- Injected dynamically -->
                 </div>
-            </div>
-
-            <!-- Products Grid -->
-            <div id="catalog-products-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                <!-- Products injected dynamically -->
-            </div>
-
-            <!-- Pagination -->
-            <div id="catalog-pagination" class="flex items-center justify-center space-x-2 pt-4"></div>
-        </section>
-
-        <!-- ==================== VIEW 2: ADMIN DASHBOARD ==================== -->
-        <section id="view-admin-dashboard" class="hidden space-y-6">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h2 class="text-2xl font-bold text-slate-900">Store Performance & Inventory Dashboard</h2>
-                    <p class="text-sm text-slate-500">Real-time overview of inventory levels, daily sales, pending orders, and alerts.</p>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <button onclick="app.refreshDashboard()" class="px-3 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-sm font-medium shadow-sm transition flex items-center space-x-1.5">
-                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                        <span>Refresh</span>
-                    </button>
-                    <button onclick="app.openCreateSaleModal()" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-semibold shadow-sm transition flex items-center space-x-1.5">
-                        <i data-lucide="plus-circle" class="w-4 h-4"></i>
-                        <span>Create Sale</span>
+                <div class="p-3 border-t border-slate-200 bg-slate-50 text-center">
+                    <button onclick="app.switchView('admin-notifications'); app.toggleNotificationPanel();" class="text-xs font-bold text-amber-600 hover:underline">
+                        View Complete Audit Trail &rarr;
                     </button>
                 </div>
             </div>
 
-            <!-- Dashboard Metric Cards Grid -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <!-- Total Products & Stock -->
-                <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div>
-                        <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Products / Stock</div>
-                        <div class="text-2xl font-extrabold text-slate-900 mt-1" id="dash-total-products">0</div>
-                        <div class="text-xs text-slate-500 mt-0.5"><span id="dash-total-stock" class="font-bold text-teal-700">0</span> items in stock</div>
-                    </div>
-                    <div class="w-12 h-12 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center">
-                        <i data-lucide="package" class="w-6 h-6"></i>
-                    </div>
-                </div>
+            <!-- Global Toast Notification Container -->
+            <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
-                <!-- Low Stock Alert Count -->
-                <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div>
-                        <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Low Stock Alerts</div>
-                        <div class="text-2xl font-extrabold text-amber-600 mt-1" id="dash-low-stock-count">0</div>
-                        <div class="text-xs text-slate-500 mt-0.5"><span id="dash-out-of-stock-count" class="font-bold text-red-600">0</span> out of stock</div>
-                    </div>
-                    <div class="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-                        <i data-lucide="alert-triangle" class="w-6 h-6"></i>
-                    </div>
-                </div>
+            <!-- ==================== MAIN VIEWS CONTAINER ==================== -->
+            <main class="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto space-y-8">
 
-                <!-- Today's Confirmed Sales -->
-                <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div>
-                        <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Today's Confirmed Sales</div>
-                        <div class="text-2xl font-extrabold text-slate-900 mt-1" id="dash-today-sales-amount">₹0</div>
-                        <div class="text-xs text-slate-500 mt-0.5"><span id="dash-today-sales-count" class="font-bold text-slate-700">0</span> orders confirmed</div>
+                <!-- ==================== 1. ADMIN DASHBOARD ==================== -->
+                <section id="view-admin-dashboard" class="space-y-6">
+                    <!-- Top Greeting Banner -->
+                    <div class="bg-gradient-to-r from-dark-950 via-dark-900 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden border border-slate-800">
+                        <div class="relative z-10 max-w-2xl space-y-2">
+                            <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-amber-500/20 text-amber-300 text-xs font-bold rounded-full uppercase tracking-wider">
+                                <span class="w-2 h-2 rounded-full bg-amber-400 animate-ping"></span> Live Retail Intelligence
+                            </span>
+                            <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight">Good Morning, Admin 👋</h1>
+                            <p class="text-slate-300 text-sm sm:text-base leading-relaxed">Here's what's happening with your shop today. All transactions and inventory changes are synchronized.</p>
+                            <div class="pt-2 flex flex-wrap gap-2">
+                                <button onclick="app.switchView('admin-create-sale')" class="btn-accent px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5">
+                                    <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+                                    <span>Create New Sale</span>
+                                </button>
+                                <button onclick="app.openAddProductModal()" class="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold backdrop-blur-sm transition flex items-center space-x-1.5">
+                                    <i data-lucide="plus" class="w-4 h-4"></i>
+                                    <span>Add Product</span>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="absolute -right-10 -bottom-10 opacity-10 text-white pointer-events-none">
+                            <i data-lucide="activity" class="w-80 h-80"></i>
+                        </div>
                     </div>
-                    <div class="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                        <i data-lucide="shopping-cart" class="w-6 h-6"></i>
-                    </div>
-                </div>
 
-                <!-- Total Paid Revenue -->
-                <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm flex items-center justify-between">
-                    <div>
-                        <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Received Revenue</div>
-                        <div class="text-2xl font-extrabold text-emerald-600 mt-1" id="dash-total-paid-amount">₹0</div>
-                        <div class="text-xs text-slate-500 mt-0.5"><span id="dash-pending-payments-count" class="font-bold text-amber-600">0</span> pending payments</div>
-                    </div>
-                    <div class="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                        <i data-lucide="badge-indian-rupee" class="w-6 h-6"></i>
-                    </div>
-                </div>
-            </div>
+                    <!-- 4 SaaS Statistic Cards -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                        <!-- Card 1: Total Products -->
+                        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs card-hover flex flex-col justify-between">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Products</span>
+                                <div class="w-10 h-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center">
+                                    <i data-lucide="package" class="w-5 h-5"></i>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <div class="text-3xl font-extrabold text-slate-900 tracking-tight" id="dash-total-products">0</div>
+                                <div class="flex items-center text-xs font-semibold text-emerald-600 mt-1">
+                                    <i data-lucide="trending-up" class="w-3.5 h-3.5 mr-1"></i>
+                                    <span>↑ Active catalog items</span>
+                                </div>
+                            </div>
+                        </div>
 
-            <!-- Two Column Section: Low Stock Warning Box & Recent Sales -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Low Stock Products List -->
-                <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+                        <!-- Card 2: Today's Sales -->
+                        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs card-hover flex flex-col justify-between">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Today's Sales</span>
+                                <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                                    <i data-lucide="badge-indian-rupee" class="w-5 h-5"></i>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <div class="text-3xl font-extrabold text-slate-900 tracking-tight" id="dash-today-sales-amount">₹0</div>
+                                <div class="text-xs text-slate-500 font-semibold mt-1">
+                                    <span id="dash-today-sales-count" class="text-amber-700 font-extrabold">0</span> Orders confirmed today
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card 3: Low Stock Alerts -->
+                        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs card-hover flex flex-col justify-between">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Low Stock</span>
+                                <div class="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center">
+                                    <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <div class="text-3xl font-extrabold text-orange-600 tracking-tight" id="dash-low-stock-count">0</div>
+                                <div class="flex items-center text-xs font-semibold text-orange-600 mt-1">
+                                    <span>⚠ Attention Needed (<span id="dash-out-of-stock-count">0</span> Out)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card 4: Pending Payments -->
+                        <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs card-hover flex flex-col justify-between">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-bold text-slate-500 uppercase tracking-wider">Pending Payments</span>
+                                <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                                    <i data-lucide="clock" class="w-5 h-5"></i>
+                                </div>
+                            </div>
+                            <div class="mt-4">
+                                <div class="text-3xl font-extrabold text-rose-600 tracking-tight" id="dash-pending-payments-count">0</div>
+                                <div class="text-xs text-slate-500 font-semibold mt-1">
+                                    Orders awaiting manual payment
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Split Section: Low Stock Warning Box & Recent Orders -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Left: Low Stock Attention Box -->
+                        <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4">
+                            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                                <div class="flex items-center space-x-2">
+                                    <i data-lucide="alert-circle" class="w-5 h-5 text-amber-500"></i>
+                                    <h3 class="font-bold text-sm text-slate-900">Low Stock & Restocking Requirements</h3>
+                                </div>
+                                <button onclick="app.switchView('admin-lowstock')" class="text-xs font-bold text-amber-600 hover:underline">View All &rarr;</button>
+                            </div>
+                            <div id="dash-low-stock-list" class="space-y-3 max-h-88 overflow-y-auto pr-1">
+                                <!-- Injected -->
+                            </div>
+                        </div>
+
+                        <!-- Right: Recent Orders & Invoices -->
+                        <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4">
+                            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                                <div class="flex items-center space-x-2">
+                                    <i data-lucide="receipt" class="w-5 h-5 text-slate-700"></i>
+                                    <h3 class="font-bold text-sm text-slate-900">Recent Customer Sales</h3>
+                                </div>
+                                <button onclick="app.switchView('admin-all-sales')" class="text-xs font-bold text-amber-600 hover:underline">View All &rarr;</button>
+                            </div>
+                            <div id="dash-recent-sales-list" class="space-y-3 max-h-88 overflow-y-auto pr-1">
+                                <!-- Injected -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ==================== 2. PUBLIC / CLIENT PRODUCT CATALOG ==================== -->
+                <section id="view-catalog" class="hidden space-y-6">
+                    <!-- Catalog Header -->
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Retail & Wholesale Product Catalog</h2>
+                            <p class="text-xs text-slate-500">Live warehouse inventory, pricing and availability.</p>
+                        </div>
+                        <!-- View Toggle: Grid vs List -->
+                        <div class="flex items-center space-x-2 bg-slate-100 p-1 rounded-xl self-start">
+                            <button onclick="app.setCatalogLayout('grid')" id="btn-catalog-grid" class="p-1.5 rounded-lg bg-white shadow-xs text-slate-900 font-bold transition">
+                                <i data-lucide="grid" class="w-4 h-4"></i>
+                            </button>
+                            <button onclick="app.setCatalogLayout('list')" id="btn-catalog-list" class="p-1.5 rounded-lg text-slate-500 hover:text-slate-900 transition">
+                                <i data-lucide="list" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Search and Category Filters -->
+                    <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
+                        <div class="relative w-full md:w-80">
+                            <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                            <input type="text" id="catalog-search-input" onkeyup="app.handleCatalogSearch(event)" placeholder="Search tools, pipes, wire..." class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500">
+                        </div>
+                        <div class="flex items-center space-x-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0" id="catalog-category-pills">
+                            <!-- Dynamic category pills -->
+                        </div>
+                    </div>
+
+                    <!-- Products Display Grid / List -->
+                    <div id="catalog-products-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <!-- Dynamic items -->
+                    </div>
+
+                    <div id="catalog-pagination" class="pt-4 flex items-center justify-between text-xs text-slate-500"></div>
+                </section>
+
+                <!-- ==================== 3. ALL PRODUCTS (ADMIN MANAGEMENT) ==================== -->
+                <section id="view-admin-products" class="hidden space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Product & Warehouse Management</h2>
+                            <p class="text-xs text-slate-500">Maintain products, update selling prices, adjust stock, and edit alert limits.</p>
+                        </div>
+                        <button onclick="app.openAddProductModal()" class="btn-accent px-4 py-2 rounded-xl text-xs font-bold shadow-md flex items-center space-x-1.5 self-start">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>Add New Product</span>
+                        </button>
+                    </div>
+
+                    <!-- Search, Category Filter, Table -->
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                        <div class="p-4 border-b border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4 bg-slate-50/50">
+                            <div class="relative w-full md:w-80">
+                                <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                                <input type="text" id="inventory-search-input" onkeyup="app.handleInventorySearch(event)" placeholder="Search by name..." class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-xs bg-white">
+                            </div>
+                            <select id="inventory-category-filter" onchange="app.filterInventoryCategory()" class="border border-slate-200 rounded-xl px-3 py-2 text-xs bg-white">
+                                <option value="">All Categories</option>
+                            </select>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                                    <tr>
+                                        <th class="p-4">Product Details</th>
+                                        <th class="p-4">Category</th>
+                                        <th class="p-4 text-right">Price</th>
+                                        <th class="p-4 text-center">Available Stock</th>
+                                        <th class="p-4 text-center">Stock Level</th>
+                                        <th class="p-4 text-center">Alert Limit</th>
+                                        <th class="p-4 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inventory-table-body" class="divide-y divide-slate-100 text-slate-700">
+                                    <!-- Injected -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="inventory-pagination" class="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500"></div>
+                    </div>
+                </section>
+
+                <!-- ==================== 4. LOW STOCK DEDICATED VIEW ==================== -->
+                <section id="view-admin-lowstock" class="hidden space-y-6">
                     <div class="flex items-center justify-between">
-                        <h3 class="font-bold text-slate-800 flex items-center space-x-2">
-                            <i data-lucide="alert-circle" class="w-5 h-5 text-amber-500"></i>
-                            <span>Low Stock & Restocking Requirements</span>
-                        </h3>
-                        <button onclick="app.switchView('admin-inventory')" class="text-xs text-teal-600 hover:underline font-semibold">Manage All</button>
+                        <div>
+                            <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Low Stock & Restocking Requirements</h2>
+                            <p class="text-xs text-slate-500">Products currently at or below their configured safety thresholds.</p>
+                        </div>
+                        <button onclick="app.checkLowStockBanner()" class="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold hover:bg-slate-50 flex items-center space-x-1">
+                            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                            <span>Refresh Alerts</span>
+                        </button>
                     </div>
-                    <div id="dash-low-stock-list" class="space-y-2.5 max-h-80 overflow-y-auto pr-1">
+
+                    <div id="lowstock-cards-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                        <!-- Low Stock Cards injected -->
+                    </div>
+                </section>
+
+                <!-- ==================== 5. CREATE SALE (TWO COLUMN SAAS POS) ==================== -->
+                <section id="view-admin-create-sale" class="hidden space-y-6">
+                    <div>
+                        <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Create Retail Order / Sale</h2>
+                        <p class="text-xs text-slate-500">Prepare invoice items and customer record. Creates a PENDING sale until SELL confirmation.</p>
+                    </div>
+
+                    <form onsubmit="app.handleCreateSale(event)" class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                        <!-- Left Column: Customer & Item Selection -->
+                        <div class="lg:col-span-7 space-y-5">
+                            <!-- Customer Selection Box -->
+                            <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4">
+                                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                                    <div class="flex items-center space-x-2">
+                                        <i data-lucide="user" class="w-4 h-4 text-amber-500"></i>
+                                        <h3 class="font-bold text-xs uppercase tracking-wider text-slate-900">Customer Information</h3>
+                                    </div>
+                                    <button type="button" onclick="app.openAddCustomerModal()" class="text-xs font-bold text-amber-600 hover:underline">+ New Customer</button>
+                                </div>
+
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                                    <div class="sm:col-span-2">
+                                        <label class="block font-semibold text-slate-700 mb-1">Select Existing Customer</label>
+                                        <select id="sale-customer-select" onchange="app.handleCustomerSelectChange()" class="w-full px-3 py-2 border border-slate-200 rounded-xl bg-slate-50 focus:bg-white focus:ring-2 focus:ring-amber-500/20">
+                                            <option value="">-- Or enter new details below --</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block font-semibold text-slate-700 mb-1">Customer Full Name *</label>
+                                        <input type="text" id="sale-customer-name" required placeholder="e.g. Rahul Sharma" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/20">
+                                    </div>
+                                    <div>
+                                        <label class="block font-semibold text-slate-700 mb-1">Phone Number (For WhatsApp/SMS) *</label>
+                                        <input type="text" id="sale-customer-phone" required placeholder="98XXXXXXXX" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/20">
+                                    </div>
+                                    <div class="sm:col-span-2">
+                                        <label class="block font-semibold text-slate-700 mb-1">Billing & Delivery Address *</label>
+                                        <input type="text" id="sale-customer-address" required placeholder="Sector / Area, City, State" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/20">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Products Selection Table -->
+                            <div class="bg-white rounded-2xl border border-slate-200/80 p-5 shadow-xs space-y-4">
+                                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                                    <div class="flex items-center space-x-2">
+                                        <i data-lucide="package" class="w-4 h-4 text-amber-500"></i>
+                                        <h3 class="font-bold text-xs uppercase tracking-wider text-slate-900">Purchased Items</h3>
+                                    </div>
+                                    <button type="button" onclick="app.addSaleItemRow()" class="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg text-xs font-bold transition flex items-center space-x-1">
+                                        <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                                        <span>Add Another Item</span>
+                                    </button>
+                                </div>
+
+                                <div id="sale-items-container" class="space-y-3">
+                                    <!-- Dynamic rows -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Sticky Summary & Checkout -->
+                        <div class="lg:col-span-5 sticky top-20 space-y-5">
+                            <div class="bg-white rounded-3xl border border-slate-200/80 p-6 shadow-sm space-y-5">
+                                <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                                    <h3 class="font-extrabold text-sm text-slate-900 uppercase tracking-wider">Sale Summary</h3>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">PENDING ORDER</span>
+                                </div>
+
+                                <div id="checkout-items-preview" class="space-y-2 text-xs text-slate-600 max-h-56 overflow-y-auto divide-y divide-slate-100">
+                                    <!-- Dynamic line items -->
+                                </div>
+
+                                <div class="pt-3 border-t border-slate-200 space-y-2 text-xs">
+                                    <div class="flex items-center justify-between text-slate-500">
+                                        <span>Subtotal</span>
+                                        <span id="checkout-subtotal-val" class="font-bold text-slate-800">₹0.00</span>
+                                    </div>
+                                    <div class="flex items-center justify-between text-slate-500">
+                                        <span>Taxes (Estimated)</span>
+                                        <span class="font-bold text-slate-800">₹0.00</span>
+                                    </div>
+                                    <div class="flex items-center justify-between text-base font-extrabold text-slate-900 pt-2 border-t border-slate-100">
+                                        <span>Total Amount</span>
+                                        <span id="checkout-total-val" class="text-xl font-black text-amber-600">₹0.00</span>
+                                    </div>
+                                </div>
+
+                                <!-- Payment Method Selector -->
+                                <div class="space-y-2 text-xs">
+                                    <label class="block font-semibold text-slate-700">Intended Payment Channel</label>
+                                    <div class="grid grid-cols-3 gap-2">
+                                        <label class="flex flex-col items-center justify-center p-2.5 border border-slate-200 rounded-xl cursor-pointer hover:border-amber-500 transition has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50/50">
+                                            <input type="radio" name="sale-payment-method" value="CASH" checked class="hidden">
+                                            <i data-lucide="banknote" class="w-4 h-4 text-slate-600 mb-1"></i>
+                                            <span class="font-bold text-[11px]">CASH</span>
+                                        </label>
+                                        <label class="flex flex-col items-center justify-center p-2.5 border border-slate-200 rounded-xl cursor-pointer hover:border-amber-500 transition has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50/50">
+                                            <input type="radio" name="sale-payment-method" value="UPI" class="hidden">
+                                            <i data-lucide="qr-code" class="w-4 h-4 text-slate-600 mb-1"></i>
+                                            <span class="font-bold text-[11px]">UPI</span>
+                                        </label>
+                                        <label class="flex flex-col items-center justify-center p-2.5 border border-slate-200 rounded-xl cursor-pointer hover:border-amber-500 transition has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50/50">
+                                            <input type="radio" name="sale-payment-method" value="OTHER" class="hidden">
+                                            <i data-lucide="credit-card" class="w-4 h-4 text-slate-600 mb-1"></i>
+                                            <span class="font-bold text-[11px]">OTHER</span>
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Notes / Remarks</label>
+                                    <input type="text" id="sale-notes" placeholder="Optional reference notes..." class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs">
+                                </div>
+
+                                <button type="submit" class="w-full py-3.5 btn-primary rounded-xl text-xs font-extrabold uppercase tracking-wider flex items-center justify-center space-x-2">
+                                    <i data-lucide="check" class="w-4 h-4"></i>
+                                    <span>Create Pending Sale</span>
+                                </button>
+                                <p class="text-[11px] text-slate-400 text-center">Stock is NOT deducted until confirmed via the SELL action.</p>
+                            </div>
+                        </div>
+                    </form>
+                </section>
+
+                <!-- ==================== 6. PENDING SALES (AWAITING SELL ACTION) ==================== -->
+                <section id="view-admin-pending-sales" class="hidden space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Pending Orders (Awaiting SELL Confirmation)</h2>
+                            <p class="text-xs text-slate-500">Review pending orders and execute inventory deduction using the SELL action.</p>
+                        </div>
+                    </div>
+
+                    <div id="pending-sales-cards-container" class="space-y-4">
+                        <!-- Pending sale cards injected -->
+                    </div>
+                </section>
+
+                <!-- ==================== 7. ALL SALES HISTORY & COMPLETED ==================== -->
+                <section id="view-admin-all-sales" class="hidden space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">All Orders & Billing Records</h2>
+                            <p class="text-xs text-slate-500">Filter, inspect invoices, and track payments across historical orders.</p>
+                        </div>
+                        <button onclick="app.switchView('admin-create-sale')" class="btn-accent px-4 py-2 rounded-xl text-xs font-bold shadow-md flex items-center space-x-1.5">
+                            <i data-lucide="plus" class="w-4 h-4"></i>
+                            <span>New Sale</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                                    <tr>
+                                        <th class="p-4">Bill No.</th>
+                                        <th class="p-4">Date & Time</th>
+                                        <th class="p-4">Customer</th>
+                                        <th class="p-4">Items Breakdown</th>
+                                        <th class="p-4 text-right">Total Amount</th>
+                                        <th class="p-4 text-center">Sale Status</th>
+                                        <th class="p-4 text-center">Payment Status</th>
+                                        <th class="p-4 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="all-sales-table-body" class="divide-y divide-slate-100 text-slate-700">
+                                    <!-- Injected -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="all-sales-pagination" class="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500"></div>
+                    </div>
+                </section>
+
+                <!-- ==================== 8. CUSTOMERS DIRECTORY ==================== -->
+                <section id="view-admin-customers" class="hidden space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Customer CRM & Purchase Directory</h2>
+                            <p class="text-xs text-slate-500">Customer contact information, delivery addresses, and purchase history.</p>
+                        </div>
+                        <button onclick="app.openAddCustomerModal()" class="btn-primary px-4 py-2 rounded-xl text-xs font-bold shadow-md flex items-center space-x-1.5 self-start">
+                            <i data-lucide="user-plus" class="w-4 h-4"></i>
+                            <span>Add New Customer</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-xs flex items-center justify-between">
+                        <div class="relative w-full max-w-sm">
+                            <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                            <input type="text" id="customer-search-input" onkeyup="app.handleCustomerSearch(event)" placeholder="Search customer by name or phone..." class="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-amber-500/20">
+                        </div>
+                    </div>
+
+                    <!-- Customer Cards Grid -->
+                    <div id="customers-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                         <!-- Injected -->
                     </div>
-                </div>
+                    <div id="customers-pagination" class="pt-2 flex items-center justify-between text-xs text-slate-500"></div>
+                </section>
 
-                <!-- Recent Confirmed / Pending Sales -->
-                <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5 space-y-4">
+                <!-- ==================== 9. NOTIFICATIONS AUDIT ==================== -->
+                <section id="view-admin-notifications" class="hidden space-y-6">
                     <div class="flex items-center justify-between">
-                        <h3 class="font-bold text-slate-800 flex items-center space-x-2">
-                            <i data-lucide="clock" class="w-5 h-5 text-teal-600"></i>
-                            <span>Recent Orders & Billing</span>
-                        </h3>
-                        <button onclick="app.switchView('admin-sales')" class="text-xs text-teal-600 hover:underline font-semibold">View All Sales</button>
+                        <div>
+                            <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">WhatsApp & SMS Notification Logs</h2>
+                            <p class="text-xs text-slate-500">Real-time audit log of customer purchase confirmations, payment receipts, and low-stock alerts.</p>
+                        </div>
+                        <button onclick="app.loadNotificationLogs()" class="px-3.5 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold hover:bg-slate-50 flex items-center space-x-1.5 shadow-xs">
+                            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                            <span>Refresh Audit Logs</span>
+                        </button>
                     </div>
-                    <div id="dash-recent-sales-list" class="space-y-2.5 max-h-80 overflow-y-auto pr-1">
-                        <!-- Injected -->
-                    </div>
-                </div>
-            </div>
-        </section>
 
-        <!-- ==================== VIEW 3: ADMIN INVENTORY MANAGEMENT ==================== -->
-        <section id="view-admin-inventory" class="hidden space-y-6">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h2 class="text-2xl font-bold text-slate-900">Inventory & Product Catalog Management</h2>
-                    <p class="text-sm text-slate-500">Create products, upload product images, adjust stock quantities, and configure low-stock limits.</p>
-                </div>
-                <button onclick="app.openAddProductModal()" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-semibold shadow-sm transition flex items-center space-x-1.5 self-start sm:self-auto">
-                    <i data-lucide="plus" class="w-4 h-4"></i>
-                    <span>Add New Product</span>
-                </button>
-            </div>
-
-            <!-- Inventory Search & Table -->
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div class="p-4 border-b border-slate-200 flex flex-col md:flex-row items-center justify-between gap-4 bg-slate-50/50">
-                    <div class="relative w-full md:w-80">
-                        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                        <input type="text" id="inventory-search-input" onkeyup="app.handleInventorySearch(event)" placeholder="Search inventory..." class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
-                    </div>
-                    <div class="flex items-center space-x-2">
-                        <select id="inventory-category-filter" onchange="app.filterInventoryCategory()" class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
-                            <option value="">All Categories</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm text-slate-600">
-                        <thead class="bg-slate-100 text-xs uppercase font-semibold text-slate-700 border-b border-slate-200">
-                            <tr>
-                                <th class="p-3.5">Product</th>
-                                <th class="p-3.5">Category</th>
-                                <th class="p-3.5 text-right">Price (₹)</th>
-                                <th class="p-3.5 text-center">Available Stock</th>
-                                <th class="p-3.5 text-center">Alert Limit</th>
-                                <th class="p-3.5 text-center">Alert Status</th>
-                                <th class="p-3.5 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="inventory-table-body" class="divide-y divide-slate-100">
+                    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                        <div id="notification-logs-full-list" class="divide-y divide-slate-100 p-2">
                             <!-- Injected -->
-                        </tbody>
-                    </table>
-                </div>
-
-                <div id="inventory-pagination" class="p-4 border-t border-slate-200 flex items-center justify-between text-sm text-slate-500"></div>
-            </div>
-        </section>
-
-        <!-- ==================== VIEW 4: ADMIN SALES & BILLING ==================== -->
-        <section id="view-admin-sales" class="hidden space-y-6">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h2 class="text-2xl font-bold text-slate-900">Sales, Billing & Order Processing</h2>
-                    <p class="text-sm text-slate-500">Process pending orders, execute SELL inventory confirmations, record payments, and print bills.</p>
-                </div>
-                <button onclick="app.openCreateSaleModal()" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-semibold shadow-sm transition flex items-center space-x-1.5 self-start sm:self-auto">
-                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
-                    <span>New Sale / Order</span>
-                </button>
-            </div>
-
-            <!-- Tabs: Pending Sales vs All Sales -->
-            <div class="flex border-b border-slate-200 space-x-6 text-sm font-medium">
-                <button onclick="app.switchSalesTab('pending')" id="tab-sales-pending" class="pb-3 border-b-2 border-teal-600 text-teal-600 font-bold flex items-center space-x-2">
-                    <span>Pending Sales (Awaiting SELL)</span>
-                    <span id="tab-pending-badge" class="px-2 py-0.5 text-xs bg-amber-100 text-amber-800 rounded-full font-bold">0</span>
-                </button>
-                <button onclick="app.switchSalesTab('all')" id="tab-sales-all" class="pb-3 border-b-2 border-transparent text-slate-500 hover:text-slate-700">
-                    <span>All Sales & History</span>
-                </button>
-            </div>
-
-            <!-- Sales Table Container -->
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm text-slate-600">
-                        <thead class="bg-slate-100 text-xs uppercase font-semibold text-slate-700 border-b border-slate-200">
-                            <tr>
-                                <th class="p-3.5">Bill No.</th>
-                                <th class="p-3.5">Date & Time</th>
-                                <th class="p-3.5">Customer</th>
-                                <th class="p-3.5">Items</th>
-                                <th class="p-3.5 text-right">Total Amount</th>
-                                <th class="p-3.5 text-center">Sale Status</th>
-                                <th class="p-3.5 text-center">Payment Status</th>
-                                <th class="p-3.5 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="sales-table-body" class="divide-y divide-slate-100">
-                            <!-- Injected -->
-                        </tbody>
-                    </table>
-                </div>
-                <div id="sales-pagination" class="p-4 border-t border-slate-200 flex items-center justify-between text-sm text-slate-500"></div>
-            </div>
-        </section>
-
-        <!-- ==================== VIEW 5: ADMIN CUSTOMERS ==================== -->
-        <section id="view-admin-customers" class="hidden space-y-6">
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                    <h2 class="text-2xl font-bold text-slate-900">Customer Records & Directory</h2>
-                    <p class="text-sm text-slate-500">View customer contact details, addresses, and individual purchase histories.</p>
-                </div>
-                <button onclick="app.openAddCustomerModal()" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-semibold shadow-sm transition flex items-center space-x-1.5 self-start sm:self-auto">
-                    <i data-lucide="user-plus" class="w-4 h-4"></i>
-                    <span>Add Customer</span>
-                </button>
-            </div>
-
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div class="p-4 border-b border-slate-200 bg-slate-50/50">
-                    <div class="relative max-w-sm">
-                        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                        <input type="text" id="customer-search-input" onkeyup="app.handleCustomerSearch(event)" placeholder="Search by name or phone..." class="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                        </div>
                     </div>
-                </div>
+                </section>
 
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm text-slate-600">
-                        <thead class="bg-slate-100 text-xs uppercase font-semibold text-slate-700 border-b border-slate-200">
-                            <tr>
-                                <th class="p-3.5">Name</th>
-                                <th class="p-3.5">Phone Number</th>
-                                <th class="p-3.5">Address</th>
-                                <th class="p-3.5">Email</th>
-                                <th class="p-3.5 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="customers-table-body" class="divide-y divide-slate-100">
-                            <!-- Injected -->
-                        </tbody>
-                    </table>
-                </div>
-                <div id="customers-pagination" class="p-4 border-t border-slate-200 flex items-center justify-between text-sm text-slate-500"></div>
-            </div>
-        </section>
+                <!-- ==================== 10. SETTINGS & ALERTS CONFIGURATION ==================== -->
+                <section id="view-admin-settings" class="hidden space-y-6">
+                    <div>
+                        <h2 class="text-2xl font-extrabold text-slate-900 tracking-tight">Notification & Store Settings</h2>
+                        <p class="text-xs text-slate-500">Configure global alert dispatches, recipient phone numbers, and notification toggles.</p>
+                    </div>
 
-        <!-- ==================== VIEW 6: NOTIFICATIONS AUDIT ==================== -->
-        <section id="view-admin-notifications" class="hidden space-y-6">
-            <div class="flex items-center justify-between">
-                <div>
-                    <h2 class="text-2xl font-bold text-slate-900">WhatsApp & SMS Notification Logs</h2>
-                    <p class="text-sm text-slate-500">Live audit of customer purchase confirmations, payment confirmations, and low-stock alerts.</p>
-                </div>
-                <button onclick="app.loadNotificationLogs()" class="px-3 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-lg text-sm font-medium shadow-sm transition flex items-center space-x-1.5">
-                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                    <span>Refresh Logs</span>
-                </button>
-            </div>
+                    <div class="bg-white rounded-2xl border border-slate-200/80 p-6 shadow-xs max-w-2xl space-y-6">
+                        <div class="border-b border-slate-100 pb-4">
+                            <h3 class="font-extrabold text-sm text-slate-900 uppercase tracking-wider">Low Stock Notifications</h3>
+                            <p class="text-xs text-slate-500 mt-1">Receive automated dispatches when any product quantity breaches its safety limit.</p>
+                        </div>
 
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-                <div id="notification-logs-list" class="divide-y divide-slate-100 p-2">
-                    <!-- Injected -->
-                </div>
-            </div>
-        </section>
-    </main>
+                        <!-- Modern Switches for Channels -->
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                                <div>
+                                    <div class="font-bold text-xs text-slate-900">WhatsApp Notification Channel</div>
+                                    <div class="text-[11px] text-slate-500">Send WhatsApp alerts for low-stock and purchase invoices.</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="settings-toggle-whatsapp" checked onchange="app.saveChannelSetting('whatsapp', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
 
-    <!-- Footer -->
-    <footer class="bg-white border-t border-slate-200 py-6 text-center text-xs text-slate-500 mt-auto">
-        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-            <div>XYZ Hardware Shop Management System &bull; Production Ready</div>
-            <div>Spring Boot 3.3.4 &bull; MySQL 8.4 &bull; Spring Security &bull; JWT</div>
+                            <div class="flex items-center justify-between p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                                <div>
+                                    <div class="font-bold text-xs text-slate-900">SMS Notification Channel</div>
+                                    <div class="text-[11px] text-slate-500">Send mobile SMS alerts via configured telecom gateway.</div>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="settings-toggle-sms" checked onchange="app.saveChannelSetting('sms', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="pt-2">
+                                <label class="block text-xs font-bold text-slate-800 mb-1">Administrator Alert Phone Number</label>
+                                <input type="text" id="settings-admin-phone" value="+919876543210" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-mono">
+                                <p class="text-[11px] text-slate-400 mt-1">Alerts for warehouse restocking will be addressed to this number.</p>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 border-t border-slate-100 flex justify-end">
+                            <button onclick="app.toast('Alert preferences saved successfully!', 'success')" class="btn-primary px-5 py-2.5 rounded-xl text-xs font-bold shadow">
+                                Save Settings
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </main>
         </div>
-    </footer>
+    </div>
 
-    <!-- ==================== MODALS ==================== -->
+    <!-- ==================== COMMERCIAL MODALS ==================== -->
 
-    <!-- 1. LOGIN MODAL -->
-    <div id="modal-login" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in duration-150">
+    <!-- 1. SIGN IN MODAL -->
+    <div id="modal-login" class="fixed inset-0 bg-slate-900/60 modal-backdrop z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 modal-content-animated border border-slate-100">
             <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-2">
-                    <div class="w-8 h-8 rounded-lg bg-teal-600 text-white flex items-center justify-center">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-amber-500 text-white flex items-center justify-center shadow-md">
                         <i data-lucide="lock" class="w-4 h-4"></i>
                     </div>
-                    <h3 class="text-lg font-bold text-slate-900">Sign In to Hardware Shop</h3>
+                    <div>
+                        <h3 class="text-base font-extrabold text-slate-900">Sign In to Dashboard</h3>
+                        <p class="text-[11px] text-slate-400">Hardware Shop Enterprise Suite</p>
+                    </div>
                 </div>
-                <button onclick="app.closeModal('modal-login')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+                <button onclick="app.closeModal('modal-login')" class="text-slate-400 hover:text-slate-600 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
 
-            <!-- Quick Demo Auto-fill Buttons -->
-            <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
-                <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Instant Demo Login:</div>
+            <!-- Instant One-Click Demo Credentials -->
+            <div class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-2">Instant Demo Autofill:</span>
                 <div class="grid grid-cols-2 gap-2">
-                    <button type="button" onclick="app.fillCredentials('admin', 'Admin@123')" class="px-2.5 py-1.5 bg-teal-50 hover:bg-teal-100 border border-teal-200 text-teal-800 text-xs font-semibold rounded text-center transition">
+                    <button type="button" onclick="app.fillCredentials('admin', 'Admin@123')" class="px-3 py-2 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 text-xs font-bold rounded-xl transition text-center">
                         🔑 Admin (Full Access)
                     </button>
-                    <button type="button" onclick="app.fillCredentials('customer', 'Customer@123')" class="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 text-xs font-semibold rounded text-center transition">
+                    <button type="button" onclick="app.fillCredentials('customer', 'Customer@123')" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-bold rounded-xl transition text-center">
                         👤 Customer (Read Only)
                     </button>
                 </div>
@@ -452,361 +789,336 @@
 
             <form onsubmit="app.handleLogin(event)" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Username</label>
-                    <input type="text" id="login-username" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Username</label>
+                    <input type="text" id="login-username" required class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Password</label>
-                    <input type="password" id="login-password" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Password</label>
+                    <input type="password" id="login-password" required class="w-full px-3.5 py-2.5 border border-slate-200 rounded-xl text-xs focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500">
                 </div>
-                <button type="submit" class="w-full py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-lg text-sm shadow transition">
-                    Sign In
+                <button type="submit" class="w-full py-3 btn-primary rounded-xl text-xs font-bold shadow-lg transition">
+                    Authenticate & Enter
                 </button>
             </form>
         </div>
     </div>
 
-    <!-- 2. CREATE PENDING SALE MODAL -->
-    <div id="modal-create-sale" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
-            <div class="flex items-center justify-between border-b pb-3 border-slate-200">
+    <!-- 2. SELL CONFIRMATION MODAL (High Impact Action) -->
+    <div id="modal-sell-confirm" class="fixed inset-0 bg-slate-900/60 modal-backdrop z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 modal-content-animated border border-slate-100">
+            <div class="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto shadow-xs">
+                <i data-lucide="check-circle-2" class="w-8 h-8"></i>
+            </div>
+            <div class="text-center space-y-1">
+                <h3 class="text-xl font-extrabold text-slate-900">Confirm Order & Execute SELL</h3>
+                <p class="text-xs text-slate-500">Are you sure you want to finalize this retail sale?</p>
+            </div>
+
+            <div id="sell-modal-summary" class="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs space-y-2">
+                <!-- Injected summary details -->
+            </div>
+
+            <div class="bg-amber-50/50 p-4 rounded-2xl border border-amber-200/80 space-y-2 text-xs text-slate-700">
+                <div class="font-extrabold text-amber-900 uppercase tracking-wider text-[10px]">System Execution Checklist:</div>
                 <div class="flex items-center space-x-2">
-                    <div class="w-8 h-8 rounded-lg bg-teal-600 text-white flex items-center justify-center">
-                        <i data-lucide="shopping-cart" class="w-4 h-4"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-lg font-bold text-slate-900">Create New Purchase Order</h3>
-                        <p class="text-xs text-slate-500">Creates a PENDING sale. Stock is not reduced until SELL is confirmed.</p>
-                    </div>
+                    <i data-lucide="check" class="w-4 h-4 text-emerald-600 shrink-0"></i>
+                    <span>Safely decrement product quantities from inventory</span>
                 </div>
-                <button onclick="app.closeModal('modal-create-sale')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
-            </div>
-
-            <form onsubmit="app.handleCreateSale(event)" class="space-y-4">
-                <!-- Customer Details -->
-                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
-                    <div class="font-semibold text-xs text-slate-600 uppercase tracking-wider">Customer Details</div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-xs font-medium text-slate-700 mb-1">Select Existing Customer</label>
-                            <select id="sale-customer-select" onchange="app.handleCustomerSelectChange()" class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-teal-500">
-                                <option value="">-- Or enter new customer below --</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-slate-700 mb-1">Customer Name *</label>
-                            <input type="text" id="sale-customer-name" required class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-slate-700 mb-1">Phone Number *</label>
-                            <input type="text" id="sale-customer-phone" required class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500" placeholder="9876543210">
-                        </div>
-                        <div>
-                            <label class="block text-xs font-medium text-slate-700 mb-1">Address *</label>
-                            <input type="text" id="sale-customer-address" required class="w-full px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-teal-500" placeholder="City, State">
-                        </div>
-                    </div>
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="check" class="w-4 h-4 text-emerald-600 shrink-0"></i>
+                    <span>Mark order as <strong class="text-emerald-700">CONFIRMED</strong></span>
                 </div>
-
-                <!-- Products Selection List -->
-                <div class="space-y-3">
-                    <div class="flex items-center justify-between">
-                        <span class="font-semibold text-xs text-slate-600 uppercase tracking-wider">Purchased Products</span>
-                        <button type="button" onclick="app.addSaleItemRow()" class="text-xs text-teal-600 font-semibold hover:underline flex items-center space-x-1">
-                            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                            <span>Add Product Row</span>
-                        </button>
-                    </div>
-
-                    <div id="sale-items-container" class="space-y-2">
-                        <!-- Dynamic item rows -->
-                    </div>
-
-                    <!-- Live Total Calculation -->
-                    <div class="flex items-center justify-between bg-teal-50 p-3.5 rounded-xl border border-teal-200">
-                        <span class="font-bold text-sm text-teal-900">Estimated Total Bill:</span>
-                        <span id="sale-calculated-total" class="text-xl font-extrabold text-teal-700">₹0.00</span>
-                    </div>
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="check" class="w-4 h-4 text-emerald-600 shrink-0"></i>
+                    <span>Generate official printable tax invoice</span>
                 </div>
-
-                <!-- Payment Method & Notes -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                    <div>
-                        <label class="block text-xs font-medium text-slate-700 mb-1">Payment Method</label>
-                        <select id="sale-payment-method" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
-                            <option value="CASH">CASH</option>
-                            <option value="UPI">UPI</option>
-                            <option value="OTHER">OTHER</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-700 mb-1">Notes / Remarks</label>
-                        <input type="text" id="sale-notes" placeholder="Optional notes..." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
-                    </div>
-                </div>
-
-                <div class="flex items-center justify-end space-x-3 pt-4 border-t border-slate-200">
-                    <button type="button" onclick="app.closeModal('modal-create-sale')" class="px-4 py-2 border border-slate-300 text-slate-600 rounded-lg text-sm hover:bg-slate-100">Cancel</button>
-                    <button type="submit" class="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-lg text-sm shadow">Create Pending Sale</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- 3. SELL CONFIRMATION MODAL (Requirement 26) -->
-    <div id="modal-sell-confirm" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
-            <div class="w-12 h-12 rounded-full bg-teal-100 text-teal-700 flex items-center justify-center mx-auto">
-                <i data-lucide="check-circle" class="w-7 h-7"></i>
-            </div>
-            <div class="text-center space-y-1">
-                <h3 class="text-lg font-extrabold text-slate-900">Are you sure you want to confirm this sale?</h3>
-                <p class="text-xs text-slate-500">This action executes the final sale transaction.</p>
-            </div>
-
-            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2 text-xs text-slate-700">
-                <div class="font-bold text-slate-800">This will:</div>
-                <div class="flex items-center space-x-2 text-slate-700">
-                    <i data-lucide="check" class="w-4 h-4 text-teal-600"></i>
-                    <span>Safely deduct inventory from warehouse stock</span>
-                </div>
-                <div class="flex items-center space-x-2 text-slate-700">
-                    <i data-lucide="check" class="w-4 h-4 text-teal-600"></i>
-                    <span>Finalize sale status to <strong class="text-teal-700">CONFIRMED</strong></span>
-                </div>
-                <div class="flex items-center space-x-2 text-slate-700">
-                    <i data-lucide="check" class="w-4 h-4 text-teal-600"></i>
-                    <span>Dispatch purchase notification to customer via WhatsApp/SMS</span>
-                </div>
-                <div class="flex items-center space-x-2 text-slate-700">
-                    <i data-lucide="check" class="w-4 h-4 text-teal-600"></i>
-                    <span>Check low-stock limits and alert shop administrator if threshold breached</span>
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="check" class="w-4 h-4 text-emerald-600 shrink-0"></i>
+                    <span>Trigger purchase notification via WhatsApp & SMS</span>
                 </div>
             </div>
 
-            <div id="sell-modal-summary" class="text-xs bg-teal-50 p-3 rounded-lg border border-teal-200"></div>
-
-            <div class="flex items-center justify-end space-x-3 pt-3">
-                <button type="button" onclick="app.closeModal('modal-sell-confirm')" class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm hover:bg-slate-100">CANCEL</button>
-                <button type="button" id="btn-execute-sell" onclick="app.executeSell()" class="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-lg text-sm shadow">CONFIRM SELL</button>
+            <div class="flex items-center justify-end space-x-3 pt-2">
+                <button type="button" onclick="app.closeModal('modal-sell-confirm')" class="px-4 py-2.5 border border-slate-200 text-slate-600 rounded-xl text-xs font-semibold hover:bg-slate-50">
+                    Cancel
+                </button>
+                <button type="button" id="btn-execute-sell" onclick="app.executeSell()" class="btn-sell-action px-6 py-2.5 rounded-xl text-xs flex items-center space-x-1.5">
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                    <span>CONFIRM SELL</span>
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- 4. PAYMENT CONFIRMATION MODAL (Requirement 27) -->
-    <div id="modal-payment-confirm" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-            <div class="w-12 h-12 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
-                <i data-lucide="badge-indian-rupee" class="w-7 h-7"></i>
+    <!-- 3. PAYMENT SUCCESS MODAL (Animated Delight) -->
+    <div id="modal-payment-success" class="fixed inset-0 bg-slate-900/60 modal-backdrop z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-7 shadow-2xl text-center space-y-5 modal-content-animated border border-slate-100">
+            <div class="success-checkmark-circle mx-auto">
+                <i data-lucide="check" class="w-8 h-8 text-emerald-600"></i>
             </div>
-            <div class="text-center space-y-1">
+            <div>
+                <h3 class="text-xl font-extrabold text-slate-900">Payment Successful</h3>
+                <div class="text-3xl font-black text-emerald-600 mt-2" id="pay-success-amount">₹0.00</div>
+                <p class="text-xs text-slate-500 mt-1 font-semibold" id="pay-success-customer">Rahul Sharma</p>
+            </div>
+
+            <div id="pay-success-items-list" class="bg-slate-50 p-3.5 rounded-2xl border border-slate-200 text-xs text-slate-600 text-left space-y-1">
+                <!-- Line items preview -->
+            </div>
+
+            <div class="flex items-center justify-center space-x-3 pt-2">
+                <button type="button" onclick="app.openBillModal(app.state.lastConfirmedSaleId)" class="btn-primary px-4 py-2.5 rounded-xl text-xs font-bold flex items-center space-x-1.5">
+                    <i data-lucide="printer" class="w-4 h-4"></i>
+                    <span>View Bill</span>
+                </button>
+                <button type="button" onclick="app.closeModal('modal-payment-success'); app.switchView('admin-all-sales');" class="px-4 py-2.5 border border-slate-200 rounded-xl text-xs font-bold hover:bg-slate-50">
+                    Back to Sales
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. MANUAL PAYMENT CONFIRMATION MODAL -->
+    <div id="modal-payment-confirm" class="fixed inset-0 bg-slate-900/60 modal-backdrop z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 modal-content-animated border border-slate-100">
+            <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
+                <i data-lucide="badge-indian-rupee" class="w-6 h-6"></i>
+            </div>
+            <div class="text-center">
                 <h3 class="text-lg font-extrabold text-slate-900">Confirm Customer Payment</h3>
-                <p class="text-xs text-slate-500">Are you sure the customer has paid for this order?</p>
+                <p class="text-xs text-slate-500">Record verification of manual cash or UPI receipt.</p>
             </div>
 
-            <div id="payment-modal-sale-info" class="text-xs bg-slate-50 p-3 rounded-lg border border-slate-200"></div>
+            <div id="payment-modal-sale-info" class="text-xs bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-1"></div>
 
             <div class="space-y-3">
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Payment Method</label>
-                    <select id="payment-confirm-method" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm bg-white">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Payment Method</label>
+                    <select id="payment-confirm-method" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs bg-white">
                         <option value="UPI">UPI / QR Code</option>
                         <option value="CASH">CASH</option>
-                        <option value="OTHER">Bank Transfer / Card / OTHER</option>
+                        <option value="OTHER">Card / Bank Transfer / OTHER</option>
                     </select>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Transaction Reference (Optional)</label>
-                    <input type="text" id="payment-confirm-ref" placeholder="e.g. UPI Ref / Txn ID" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Transaction Reference (Optional)</label>
+                    <input type="text" id="payment-confirm-ref" placeholder="e.g. UPI Ref # or receipt code" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs">
                 </div>
             </div>
 
             <div class="flex items-center justify-end space-x-3 pt-3">
-                <button type="button" onclick="app.closeModal('modal-payment-confirm')" class="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg text-sm hover:bg-slate-100">CANCEL</button>
-                <button type="button" id="btn-execute-payment" onclick="app.executeConfirmPayment()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg text-sm shadow">CONFIRM PAYMENT</button>
+                <button type="button" onclick="app.closeModal('modal-payment-confirm')" class="px-4 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-600">Cancel</button>
+                <button type="button" id="btn-execute-payment" onclick="app.executeConfirmPayment()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-extrabold shadow">
+                    CONFIRM PAYMENT
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- 5. BILL & RECEIPT MODAL (Requirement 14) -->
-    <div id="modal-bill" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-2xl w-full p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
-            <div class="flex items-center justify-between border-b pb-3 border-slate-200 no-print">
-                <div class="flex items-center space-x-2">
-                    <i data-lucide="receipt" class="w-5 h-5 text-teal-600"></i>
-                    <h3 class="text-lg font-bold text-slate-900">Tax Invoice & Cash Receipt</h3>
-                </div>
-                <div class="flex items-center space-x-2">
-                    <button onclick="window.print()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-300 flex items-center space-x-1">
-                        <i data-lucide="printer" class="w-3.5 h-3.5"></i>
-                        <span>Print Bill</span>
-                    </button>
-                    <a id="bill-pdf-download-btn" href="#" target="_blank" class="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold rounded-lg shadow-sm flex items-center space-x-1">
-                        <i data-lucide="download" class="w-3.5 h-3.5"></i>
-                        <span>Download PDF</span>
-                    </a>
-                    <button onclick="app.closeModal('modal-bill')" class="text-slate-400 hover:text-slate-600 ml-2"><i data-lucide="x" class="w-5 h-5"></i></button>
-                </div>
+    <!-- 5. PRODUCT DETAILS MODAL (Visual Progress Bar) -->
+    <div id="modal-product-details" class="fixed inset-0 bg-slate-900/60 modal-backdrop z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 modal-content-animated border border-slate-100 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Product Specifications</span>
+                <button onclick="app.closeModal('modal-product-details')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
 
-            <!-- Printable Bill Paper View -->
-            <div id="printable-bill-area" class="bg-white p-6 border border-slate-200 rounded-xl shadow-inner font-sans space-y-4">
-                <!-- Injected formatted bill content -->
+            <div id="product-details-content" class="space-y-4">
+                <!-- Injected with visual stock progress bar -->
             </div>
         </div>
     </div>
 
-    <!-- 6. PRODUCT ADD / EDIT MODAL -->
-    <div id="modal-product-form" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div class="flex items-center justify-between border-b pb-2 border-slate-200">
-                <h3 id="product-modal-title" class="text-lg font-bold text-slate-900">Add New Product</h3>
+    <!-- 6. MULTI-SECTION ADD / EDIT PRODUCT MODAL (With Drag & Drop) -->
+    <div id="modal-product-form" class="fixed inset-0 bg-slate-900/60 modal-backdrop z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-5 modal-content-animated border border-slate-100 max-h-[92vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 id="product-modal-title" class="text-lg font-extrabold text-slate-900">Add New Product</h3>
                 <button onclick="app.closeModal('modal-product-form')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <form onsubmit="app.handleProductSubmit(event)" class="space-y-3">
+
+            <form onsubmit="app.handleProductSubmit(event)" class="space-y-6">
                 <input type="hidden" id="product-form-id">
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Product Name *</label>
-                    <input type="text" id="product-form-name" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Category</label>
-                        <input type="text" id="product-form-category" placeholder="Plumbing, Tools..." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Unit Price (₹) *</label>
-                        <input type="number" step="0.01" min="0" id="product-form-price" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Initial Stock *</label>
-                        <input type="number" min="0" id="product-form-quantity" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Low-Stock Alert Limit *</label>
-                        <input type="number" min="0" id="product-form-low-limit" value="10" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
-                    </div>
-                </div>
-                <div class="flex items-center space-x-2 pt-1">
-                    <input type="checkbox" id="product-form-notification-enabled" checked class="rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-                    <label for="product-form-notification-enabled" class="text-xs font-medium text-slate-700">Enable Low-Stock WhatsApp / SMS Alerts</label>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Description</label>
-                    <textarea id="product-form-description" rows="2" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"></textarea>
-                </div>
-                <!-- Image Upload (Requirement 28) -->
-                <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Product Image (JPEG, PNG, WEBP)</label>
-                    <input type="file" id="product-form-file" accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100">
-                    <input type="hidden" id="product-form-image-url">
-                    <div id="product-form-image-preview" class="hidden mt-2">
-                        <img src="" class="h-20 w-20 object-cover rounded-lg border border-slate-200">
+
+                <!-- Section 1: Basic Information -->
+                <div class="space-y-3">
+                    <div class="font-extrabold text-xs text-amber-700 uppercase tracking-wider">1. Basic Information</div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                        <div class="sm:col-span-2">
+                            <label class="block font-bold text-slate-700 mb-1">Product Name *</label>
+                            <input type="text" id="product-form-name" required placeholder="e.g. PVC Pipe 1 inch" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/20">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Category</label>
+                            <input type="text" id="product-form-category" placeholder="Plumbing, Tools, Electrical" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/20">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Expected Restock Date (Optional)</label>
+                            <input type="date" id="product-form-restock-date" class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/20">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <label class="block font-bold text-slate-700 mb-1">Description</label>
+                            <textarea id="product-form-description" rows="2" placeholder="Quality and dimensions..." class="w-full px-3 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/20"></textarea>
+                        </div>
                     </div>
                 </div>
-                <div class="flex items-center justify-end space-x-2 pt-3 border-t">
-                    <button type="button" onclick="app.closeModal('modal-product-form')" class="px-4 py-2 border text-slate-600 rounded-lg text-sm">Cancel</button>
-                    <button type="submit" class="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold rounded-lg text-sm">Save Product</button>
+
+                <!-- Section 2: Pricing & Inventory -->
+                <div class="space-y-3">
+                    <div class="font-extrabold text-xs text-amber-700 uppercase tracking-wider">2. Pricing & Warehouse Stock</div>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Selling Price (₹) *</label>
+                            <input type="number" step="0.01" min="0" id="product-form-price" required class="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Available Quantity *</label>
+                            <input type="number" min="0" id="product-form-quantity" required class="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 mb-1">Low-Stock Alert Limit *</label>
+                            <input type="number" min="0" id="product-form-low-limit" value="10" required class="w-full px-3 py-2 border border-slate-200 rounded-xl font-bold">
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3 pt-1">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="product-form-notification-enabled" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span class="text-xs font-semibold text-slate-700">Enable Low-Stock WhatsApp & SMS Alerts for this item</span>
+                    </div>
+                </div>
+
+                <!-- Section 3: Drag & Drop Image Upload -->
+                <div class="space-y-3">
+                    <div class="font-extrabold text-xs text-amber-700 uppercase tracking-wider">3. Product Image</div>
+                    <div id="dropzone-box" class="dropzone-area rounded-2xl p-6 text-center cursor-pointer border-2 border-dashed border-slate-300 hover:border-amber-500 transition" onclick="document.getElementById('product-form-file').click()">
+                        <input type="file" id="product-form-file" accept="image/*" class="hidden" onchange="app.handleImageFileSelect(this)">
+                        <input type="hidden" id="product-form-image-url">
+
+                        <div id="dropzone-empty-view" class="space-y-2">
+                            <div class="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
+                                <i data-lucide="camera" class="w-6 h-6"></i>
+                            </div>
+                            <div class="font-bold text-xs text-slate-800">Drag & Drop Image Here, or <span class="text-amber-600 underline">Browse Files</span></div>
+                            <div class="text-[11px] text-slate-400">JPEG, PNG, WEBP (Max 5MB)</div>
+                        </div>
+
+                        <div id="dropzone-preview-view" class="hidden space-y-2">
+                            <img id="dropzone-preview-img" src="" class="h-28 w-28 object-cover rounded-xl mx-auto shadow-md border border-slate-200">
+                            <button type="button" onclick="event.stopPropagation(); app.removeImageSelection();" class="text-xs text-red-500 font-bold hover:underline">Remove Image</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-100">
+                    <button type="button" onclick="app.closeModal('modal-product-form')" class="px-4 py-2.5 border border-slate-200 rounded-xl text-xs font-semibold text-slate-600">Cancel</button>
+                    <button type="submit" class="btn-primary px-6 py-2.5 rounded-xl text-xs font-bold shadow">Save Product</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- 7. STOCK ADJUSTMENT MODAL -->
-    <div id="modal-stock" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-4">
-            <h3 class="text-md font-bold text-slate-900">Adjust Product Stock</h3>
-            <div id="stock-modal-product-info" class="text-xs bg-slate-50 p-2.5 rounded-lg border text-slate-600"></div>
+    <div id="modal-stock" class="fixed inset-0 bg-slate-900/60 modal-backdrop z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 modal-content-animated border border-slate-100">
+            <h3 class="text-base font-extrabold text-slate-900">Adjust Warehouse Stock</h3>
+            <div id="stock-modal-product-info" class="text-xs bg-slate-50 p-3 rounded-xl border border-slate-200 text-slate-700"></div>
+
             <form onsubmit="app.handleStockSubmit(event)" class="space-y-3">
                 <input type="hidden" id="stock-modal-product-id">
                 <div>
-                    <label class="block text-xs font-medium text-slate-700 mb-1">Quantity to Add / Subtract</label>
-                    <input type="number" id="stock-modal-delta" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" placeholder="e.g. +20 or -5">
-                    <p class="text-[11px] text-slate-500 mt-1">Use positive numbers to add stock, negative to reduce.</p>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Quantity Delta (+ or -)</label>
+                    <input type="number" id="stock-modal-delta" required placeholder="e.g. +25 or -5" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs font-bold">
+                    <p class="text-[11px] text-slate-400 mt-1">Positive number increases stock; negative decreases.</p>
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-slate-700 mb-1">Reason (Optional)</label>
-                    <input type="text" id="stock-modal-reason" placeholder="e.g. Restocked batch #4" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Reason / Note</label>
+                    <input type="text" id="stock-modal-reason" placeholder="e.g. Fresh shipment received" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-xs">
                 </div>
                 <div class="flex items-center justify-end space-x-2 pt-2">
-                    <button type="button" onclick="app.closeModal('modal-stock')" class="px-3 py-1.5 border text-slate-600 rounded-lg text-xs">Cancel</button>
-                    <button type="submit" class="px-4 py-1.5 bg-teal-600 text-white rounded-lg text-xs font-semibold">Update Stock</button>
+                    <button type="button" onclick="app.closeModal('modal-stock')" class="px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-600">Cancel</button>
+                    <button type="submit" class="btn-primary px-4 py-2 rounded-xl text-xs font-bold">Update Stock</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- 8. LOW STOCK SETTINGS MODAL -->
-    <div id="modal-low-stock-settings" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl space-y-4">
-            <h3 class="text-md font-bold text-slate-900">Low-Stock Alert Settings</h3>
-            <div id="low-stock-modal-info" class="text-xs bg-slate-50 p-2.5 rounded-lg border text-slate-600"></div>
-            <form onsubmit="app.handleLowStockSettingsSubmit(event)" class="space-y-3">
-                <input type="hidden" id="low-stock-modal-product-id">
-                <div>
-                    <label class="block text-xs font-medium text-slate-700 mb-1">Low-Stock Alert Limit</label>
-                    <input type="number" min="0" id="low-stock-modal-limit" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
+    <!-- 8. COMMERCIAL INVOICE / BILL MODAL -->
+    <div id="modal-bill" class="fixed inset-0 bg-slate-900/60 modal-backdrop z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4 modal-content-animated border border-slate-100 max-h-[92vh] overflow-y-auto">
+            <!-- Header actions (Hidden during print) -->
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3 no-print">
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="receipt" class="w-5 h-5 text-amber-500"></i>
+                    <h3 class="text-base font-extrabold text-slate-900">Tax Invoice & Cash Receipt</h3>
                 </div>
-                <div class="flex items-center space-x-2 pt-1">
-                    <input type="checkbox" id="low-stock-modal-enabled" class="rounded border-slate-300 text-teal-600 focus:ring-teal-500">
-                    <label for="low-stock-modal-enabled" class="text-xs font-medium text-slate-700">Enable Alert Notifications</label>
+                <div class="flex items-center space-x-2">
+                    <button onclick="window.print()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl border border-slate-200 flex items-center space-x-1.5 transition">
+                        <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                        <span>Print Invoice</span>
+                    </button>
+                    <a id="bill-pdf-download-btn" href="#" target="_blank" class="btn-accent px-3.5 py-1.5 rounded-xl text-xs font-bold shadow-xs flex items-center space-x-1.5 transition">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                        <span>Download PDF</span>
+                    </a>
+                    <button onclick="app.closeModal('modal-bill')" class="text-slate-400 hover:text-slate-600 p-1"><i data-lucide="x" class="w-5 h-5"></i></button>
                 </div>
-                <div class="flex items-center justify-end space-x-2 pt-2">
-                    <button type="button" onclick="app.closeModal('modal-low-stock-settings')" class="px-3 py-1.5 border text-slate-600 rounded-lg text-xs">Cancel</button>
-                    <button type="submit" class="px-4 py-1.5 bg-teal-600 text-white rounded-lg text-xs font-semibold">Save Settings</button>
-                </div>
-            </form>
+            </div>
+
+            <!-- Printable Paper Container -->
+            <div id="invoice-print-container" class="bg-white p-6 rounded-2xl border border-slate-200 shadow-inner font-sans space-y-5">
+                <!-- Injected Commercial Invoice -->
+            </div>
         </div>
     </div>
 
     <!-- 9. ADD CUSTOMER MODAL -->
-    <div id="modal-customer" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full p-5 shadow-2xl space-y-4">
-            <div class="flex items-center justify-between border-b pb-2">
-                <h3 class="text-md font-bold text-slate-900">Add Customer Record</h3>
-                <button onclick="app.closeModal('modal-customer')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+    <div id="modal-customer" class="fixed inset-0 bg-slate-900/60 modal-backdrop z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 modal-content-animated border border-slate-100">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                <h3 class="text-base font-extrabold text-slate-900">New Customer Record</h3>
+                <button onclick="app.closeModal('modal-customer')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
-            <form onsubmit="app.handleCustomerSubmit(event)" class="space-y-3">
+            <form onsubmit="app.handleCustomerSubmit(event)" class="space-y-3 text-xs">
                 <div>
-                    <label class="block text-xs font-medium text-slate-700 mb-1">Customer Full Name *</label>
-                    <input type="text" id="customer-modal-name" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
+                    <label class="block font-bold text-slate-700 mb-1">Customer Full Name *</label>
+                    <input type="text" id="customer-modal-name" required placeholder="e.g. Rahul Sharma" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-slate-700 mb-1">Phone Number *</label>
-                    <input type="text" id="customer-modal-phone" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" placeholder="98XXXXXXXX">
+                    <label class="block font-bold text-slate-700 mb-1">Mobile Phone Number *</label>
+                    <input type="text" id="customer-modal-phone" required placeholder="98XXXXXXXX" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-slate-700 mb-1">Address *</label>
-                    <input type="text" id="customer-modal-address" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" placeholder="City, State">
+                    <label class="block font-bold text-slate-700 mb-1">Address *</label>
+                    <input type="text" id="customer-modal-address" required placeholder="Greater Noida, Uttar Pradesh" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
                 </div>
                 <div>
-                    <label class="block text-xs font-medium text-slate-700 mb-1">Email (Optional)</label>
-                    <input type="email" id="customer-modal-email" class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm">
+                    <label class="block font-bold text-slate-700 mb-1">Email (Optional)</label>
+                    <input type="email" id="customer-modal-email" placeholder="customer@example.com" class="w-full px-3 py-2 border border-slate-200 rounded-xl">
                 </div>
                 <div class="flex items-center justify-end space-x-2 pt-2">
-                    <button type="button" onclick="app.closeModal('modal-customer')" class="px-3 py-1.5 border text-slate-600 rounded-lg text-xs">Cancel</button>
-                    <button type="submit" class="px-4 py-1.5 bg-teal-600 text-white rounded-lg text-xs font-semibold">Save Customer</button>
+                    <button type="button" onclick="app.closeModal('modal-customer')" class="px-3.5 py-2 border border-slate-200 rounded-xl text-xs font-semibold text-slate-600">Cancel</button>
+                    <button type="submit" class="btn-primary px-4 py-2 rounded-xl text-xs font-bold">Save Customer</button>
                 </div>
             </form>
         </div>
     </div>
 
     <!-- 10. CUSTOMER PURCHASE HISTORY MODAL -->
-    <div id="modal-customer-history" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-xl w-full p-5 shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto">
-            <div class="flex items-center justify-between border-b pb-2">
-                <h3 id="customer-history-title" class="text-md font-bold text-slate-900">Purchase History</h3>
-                <button onclick="app.closeModal('modal-customer-history')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-4 h-4"></i></button>
+    <div id="modal-customer-history" class="fixed inset-0 bg-slate-900/60 modal-backdrop z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl space-y-4 modal-content-animated border border-slate-100 max-h-[85vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                <h3 id="customer-history-title" class="text-base font-extrabold text-slate-900">Purchase History</h3>
+                <button onclick="app.closeModal('modal-customer-history')" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
             <div id="customer-history-content" class="space-y-3">
-                <!-- Injected -->
+                <!-- Injected purchase cards -->
             </div>
         </div>
     </div>
 
-    <!-- Frontend Application Logic -->
+    <!-- Client Application Logic -->
     <script src="/js/app.js"></script>
 </body>
 </html>
