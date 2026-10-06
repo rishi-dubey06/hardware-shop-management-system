@@ -1,0 +1,42 @@
+services:
+  - type: web
+    name: hardware-shop-management-system
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon
+    healthCheckPath: /actuator/health
+    envVars:
+      - key: PORT
+        value: 8080
+      - key: DB_URL
+        fromDatabase:
+          name: hardwareshop-mysql
+          property: connectionString
+      - key: DB_USERNAME
+        fromDatabase:
+          name: hardwareshop-mysql
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: hardwareshop-mysql
+          property: password
+      - key: JWT_SECRET
+        generateValue: true
+      - key: NOTIFICATION_PROVIDER
+        value: mock
+      - key: ADMIN_ALERT_PHONE
+        value: "+919876543210"
+      - key: SHOP_NAME
+        value: "XYZ HARDWARE SHOP"
+      - key: SHOP_CONTACT
+        value: "+91 98765 43210"
+      - key: SHOP_ADDRESS
+        value: "Shop #12, Central Hardware Market, Sector 18, Greater Noida, UP"
+
+databases:
+  - name: hardwareshop-mysql
+    databaseName: hardwareshop_db
+    user: hardware_admin
+    plan: free
+    region: oregon

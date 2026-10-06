@@ -1,0 +1,32 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:hardwareshop_testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 5MB
+
+app:
+  jwt:
+    secret: dGhpc0lzQVZlcnlTZWN1cmVTZWNyZXRLZXlGb3JTYWxlc0hhcmR3YXJlU2hvcEFwcGxpY2F0aW9uMjAyNg==
+    expiration-ms: 3600000
+  storage:
+    upload-dir: target/test-uploads
+  notification:
+    provider: mock
+    admin-phone: "+919876543210"
+
+logging:
+  level:
+    root: WARN
+    com.hardwareshop: INFO
