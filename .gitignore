@@ -39,3 +39,9 @@ build/
 ### Uploaded User Files ###
 uploads/
 target/test-uploads/
+
+### Node & Frontend Artifacts ###
+node_modules/
+**/node_modules/
+dist/
+**/dist/
