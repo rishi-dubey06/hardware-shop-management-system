@@ -54,11 +54,18 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- PostgreSQL Driver for Render Cloud Database -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- H2 Database for tests and fallback in-memory mode -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <scope>test</scope>
+            <scope>runtime</scope>
         </dependency>
 
         <!-- JWT for Stateless Authentication -->
