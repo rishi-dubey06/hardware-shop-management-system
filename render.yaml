@@ -1,42 +1,44 @@
 services:
+  # ==========================================
+  # Spring Boot Java 21 Backend Service
+  # ==========================================
   - type: web
-    name: hardware-shop-management-system
+    name: hardwareshop-backend
     env: docker
-    dockerfilePath: ./Dockerfile
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
     plan: free
     region: oregon
-    healthCheckPath: /actuator/health
     envVars:
       - key: PORT
         value: 8080
       - key: DB_URL
-        fromDatabase:
-          name: hardwareshop-mysql
-          property: connectionString
+        sync: false
       - key: DB_USERNAME
-        fromDatabase:
-          name: hardwareshop-mysql
-          property: user
+        sync: false
       - key: DB_PASSWORD
-        fromDatabase:
-          name: hardwareshop-mysql
-          property: password
+        sync: false
       - key: JWT_SECRET
         generateValue: true
       - key: NOTIFICATION_PROVIDER
         value: mock
       - key: ADMIN_ALERT_PHONE
         value: "+919876543210"
-      - key: SHOP_NAME
-        value: "XYZ HARDWARE SHOP"
-      - key: SHOP_CONTACT
-        value: "+91 98765 43210"
-      - key: SHOP_ADDRESS
-        value: "Shop #12, Central Hardware Market, Sector 18, Greater Noida, UP"
+      - key: ALLOWED_ORIGINS
+        value: "*"
 
-databases:
-  - name: hardwareshop-mysql
-    databaseName: hardwareshop_db
-    user: hardware_admin
+  # ==========================================
+  # React 19 Frontend Web Service
+  # ==========================================
+  - type: web
+    name: hardwareshop-frontend
+    env: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
     plan: free
     region: oregon
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
