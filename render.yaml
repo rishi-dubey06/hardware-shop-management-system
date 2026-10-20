@@ -1,16 +1,7 @@
-databases:
-  # ==========================================
-  # Automatic 100% Free Cloud Managed Database
-  # ==========================================
-  - name: hardwareshop-db
-    plan: free
-    region: oregon
-    databaseName: hardwareshop_db
-    user: hardware_user
-
 services:
   # ==========================================
   # Spring Boot Java 21 Backend Web Service
+  # 100% Free - Zero Credit Card Required
   # ==========================================
   - type: web
     name: hardwareshop-backend
@@ -23,9 +14,11 @@ services:
       - key: PORT
         value: 8080
       - key: DB_URL
-        fromDatabase:
-          name: hardwareshop-db
-          property: connectionString
+        value: "jdbc:h2:file:/app/data/hardwareshop_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL"
+      - key: DB_USERNAME
+        value: "sa"
+      - key: DB_PASSWORD
+        value: ""
       - key: JWT_SECRET
         generateValue: true
       - key: NOTIFICATION_PROVIDER
@@ -37,6 +30,7 @@ services:
 
   # ==========================================
   # React 19 Frontend Static Web App
+  # 100% Free - Zero Credit Card Required
   # ==========================================
   - type: web
     name: hardwareshop-frontend

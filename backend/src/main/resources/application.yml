@@ -8,9 +8,9 @@ spring:
     name: hardware-shop-management-system
 
   datasource:
-    url: ${DB_URL:jdbc:mysql://localhost:3306/hardwareshop_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true}
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:rd@2}
+    url: ${DB_URL:jdbc:h2:file:./data/hardwareshop_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL}
+    username: ${DB_USERNAME:sa}
+    password: ${DB_PASSWORD:}
     hikari:
       maximum-pool-size: 10
       minimum-idle: 2
