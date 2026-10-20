@@ -6,8 +6,8 @@ services:
   - type: web
     name: hardwareshop-backend
     runtime: docker
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
+    dockerfilePath: backend/Dockerfile
+    dockerContext: backend
     plan: free
     region: oregon
     envVars:
@@ -35,10 +35,9 @@ services:
   - type: web
     name: hardwareshop-frontend
     runtime: static
-    rootDir: ./frontend
+    rootDir: frontend
     buildCommand: npm install && npm run build
-    staticPublishPath: ./dist
-    plan: free
+    staticPublishPath: dist
     routes:
       - type: rewrite
         source: /*
