@@ -4,7 +4,7 @@ services:
   # 100% Free - Zero Credit Card Required
   # ==========================================
   - type: web
-    name: hardwareshop-backend
+    name: hardwareshop-mgmt-backend
     runtime: docker
     dockerfilePath: backend/Dockerfile
     dockerContext: backend
@@ -33,11 +33,17 @@ services:
   # 100% Free - Zero Credit Card Required
   # ==========================================
   - type: web
-    name: hardwareshop-frontend
+    name: hardwareshop-mgmt-frontend
     runtime: static
     rootDir: frontend
     buildCommand: npm install && npm run build
     staticPublishPath: dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        fromService:
+          type: web
+          name: hardwareshop-mgmt-backend
+          property: host
     routes:
       - type: rewrite
         source: /*
