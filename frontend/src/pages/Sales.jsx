@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   Receipt, Plus, Search, Filter, Eye, CheckCircle2, 
-  CreditCard, FileText, ArrowRight, RefreshCw, AlertCircle, Calendar
+  CreditCard, FileText, ArrowRight, RefreshCw, AlertCircle, Calendar, Share2
 } from 'lucide-react';
 import { saleApi } from '../services/api';
 import TaxInvoiceModal from '../components/TaxInvoiceModal';
@@ -58,11 +58,13 @@ export default function Sales() {
 
   const handleSellConfirm = async () => {
     if (!sellModal.sale) return;
+    const targetSale = sellModal.sale;
     try {
       setSellModal(prev => ({ ...prev, loading: true }));
-      await saleApi.confirmSell(sellModal.sale.id);
-      setSuccessMsg(`Sale ${sellModal.sale.billNumber} confirmed successfully! Inventory deducted and customer notification sent.`);
+      await saleApi.confirmSell(targetSale.id);
       setSellModal({ open: false, sale: null, loading: false });
+      setSelectedSaleIdForInvoice(targetSale.id);
+      setSuccessMsg(`Sale ${targetSale.billNumber} confirmed successfully! Inventory deducted. Official Tax Invoice opened.`);
       fetchSales();
     } catch (err) {
       setError(err.message || 'Failed to confirm sale.');
@@ -314,6 +316,21 @@ export default function Sales() {
                             <CreditCard className="w-3 h-3" /> Pay
                           </button>
                         )}
+
+                        {/* Send via WhatsApp */}
+                        <button
+                          onClick={() => {
+                            if (sale.whatsappShareUrl) {
+                              window.open(sale.whatsappShareUrl, '_blank', 'noopener,noreferrer');
+                            } else {
+                              setSelectedSaleIdForInvoice(sale.id);
+                            }
+                          }}
+                          className="p-1.5 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition"
+                          title="Send Bill via WhatsApp to Customer"
+                        >
+                          <Share2 className="w-4 h-4" />
+                        </button>
 
                         {/* View Tax Invoice Modal */}
                         <button

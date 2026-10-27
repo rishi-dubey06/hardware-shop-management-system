@@ -59,6 +59,8 @@ app:
     name: ${SHOP_NAME:XYZ HARDWARE SHOP}
     contact: ${SHOP_CONTACT:+91 98765 43210}
     address: ${SHOP_ADDRESS:Shop #12, Central Hardware Market, Sector 18, Greater Noida, UP}
+    gstin: ${SHOP_GSTIN:09AABCU9603R1ZM}
+    state: ${SHOP_STATE:09 - Uttar Pradesh}
 
 management:
   endpoints:

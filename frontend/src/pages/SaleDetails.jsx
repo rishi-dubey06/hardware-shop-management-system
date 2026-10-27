@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Receipt, Calendar, Clock, User, Phone, 
   MapPin, CheckCircle2, AlertCircle, CreditCard, Download, 
-  Printer, ShieldCheck, ShoppingBag
+  Printer, ShieldCheck, ShoppingBag, Share2
 } from 'lucide-react';
 import { saleApi } from '../services/api';
 import TaxInvoiceModal from '../components/TaxInvoiceModal';
@@ -133,6 +133,21 @@ export default function SaleDetails() {
               Confirm Payment
             </button>
           )}
+
+          <button
+            onClick={() => {
+              if (sale.whatsappShareUrl) {
+                window.open(sale.whatsappShareUrl, '_blank', 'noopener,noreferrer');
+              } else {
+                setInvoiceModalOpen(true);
+              }
+            }}
+            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg text-sm shadow-xs transition flex items-center gap-1.5"
+            title="Send Bill via WhatsApp"
+          >
+            <Share2 className="w-4 h-4" />
+            WhatsApp
+          </button>
 
           <button
             onClick={() => setInvoiceModalOpen(true)}

@@ -12,9 +12,11 @@ import com.hardwareshop.exception.ResourceNotFoundException;
 import com.hardwareshop.notification.NotificationService;
 import com.hardwareshop.repository.ProductRepository;
 import com.hardwareshop.repository.SaleRepository;
+import com.hardwareshop.util.BillNotificationHelper;
 import com.hardwareshop.util.BillNumberGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -36,6 +38,18 @@ public class SaleService {
     private final CustomerService customerService;
     private final NotificationService notificationService;
     private final BillNumberGenerator billNumberGenerator;
+
+    @Value("${app.shop.name:XYZ HARDWARE SHOP}")
+    private String shopName;
+
+    @Value("${app.shop.contact:+91 98765 43210}")
+    private String shopContact;
+
+    @Value("${app.shop.address:Shop #12, Central Hardware Market, Sector 18, Greater Noida, UP}")
+    private String shopAddress;
+
+    @Value("${app.shop.gstin:09AABCU9603R1ZM}")
+    private String shopGstin;
 
     public SaleService(SaleRepository saleRepository,
                        ProductRepository productRepository,
@@ -234,6 +248,20 @@ public class SaleService {
             }
         }
         res.setItems(items);
+
+        String customerPhone = sale.getCustomer() != null ? sale.getCustomer().getPhoneNumber() : "";
+        String customerName = sale.getCustomer() != null ? sale.getCustomer().getName() : "Walk-in Customer";
+        String payMethod = sale.getPaymentMethod() != null ? sale.getPaymentMethod().name() : "CASH";
+        String payStatus = sale.getPaymentStatus() != null ? sale.getPaymentStatus().name() : "CONFIRMED";
+
+        String waMessage = BillNotificationHelper.buildWhatsAppBillMessage(
+                shopName, shopContact, shopAddress, shopGstin,
+                sale.getBillNumber(), customerName, sale.getSaleDate(),
+                items, sale.getTotalAmount(), payMethod, payStatus
+        );
+
+        res.setWhatsappShareUrl(BillNotificationHelper.createWhatsAppUrl(customerPhone, waMessage));
+        res.setSmsShareUrl(BillNotificationHelper.createSmsUrl(customerPhone, waMessage));
 
         return res;
     }

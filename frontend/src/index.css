@@ -74,9 +74,16 @@ body {
     top: 0;
     width: 100%;
     margin: 0;
-    padding: 20px;
+    padding: 8mm;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    border: 1px solid #94a3b8 !important;
   }
   .no-print {
     display: none !important;
+  }
+  @page {
+    margin: 8mm;
+    size: A4 portrait;
   }
 }

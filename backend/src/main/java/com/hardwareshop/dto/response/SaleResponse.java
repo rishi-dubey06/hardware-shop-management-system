@@ -29,6 +29,8 @@ public class SaleResponse {
     private List<SaleItemResponse> items = new ArrayList<>();
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String whatsappShareUrl;
+    private String smsShareUrl;
 
     public SaleResponse() {
     }
@@ -159,5 +161,21 @@ public class SaleResponse {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getWhatsappShareUrl() {
+        return whatsappShareUrl;
+    }
+
+    public void setWhatsappShareUrl(String whatsappShareUrl) {
+        this.whatsappShareUrl = whatsappShareUrl;
+    }
+
+    public String getSmsShareUrl() {
+        return smsShareUrl;
+    }
+
+    public void setSmsShareUrl(String smsShareUrl) {
+        this.smsShareUrl = smsShareUrl;
     }
 }

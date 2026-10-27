@@ -2,6 +2,7 @@ package com.hardwareshop.notification;
 
 import com.hardwareshop.entity.*;
 import com.hardwareshop.repository.NotificationLogRepository;
+import com.hardwareshop.util.BillNotificationHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -137,7 +138,15 @@ public class NotificationServiceImpl implements NotificationService {
         dispatchNotification(adminPhone, message, NotificationType.LOW_STOCK_ALERT);
     }
 
-    private void dispatchNotification(String recipient, String message, NotificationType type) {
+    private void dispatchNotification(String rawRecipient, String message, NotificationType type) {
+        if (rawRecipient == null || rawRecipient.isBlank()) {
+            log.warn("Cannot dispatch notification: Recipient phone is null or empty");
+            return;
+        }
+
+        String normalized = BillNotificationHelper.normalizeIndianPhone(rawRecipient);
+        String recipient = normalized.startsWith("+") ? normalized : ("+" + normalized);
+
         // Dispatch to WhatsApp
         try {
             NotificationResult waResult = whatsAppService.sendWhatsApp(recipient, message);
